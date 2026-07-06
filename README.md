@@ -1,4 +1,4 @@
-# DiscussHub — Django Discussion Forum
+# DissHub — Django Discussion Forum
 
 A full-featured discussion forum built with Django, HTML, CSS, and Bootstrap 5.
 Users can sign up, post problems/discussions under categories, reply with comments,
