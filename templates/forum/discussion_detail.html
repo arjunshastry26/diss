@@ -1,0 +1,89 @@
+{% extends 'forum/base.html' %}
+{% block title %}{{ discussion.title }} - DiscussHub{% endblock %}
+{% block content %}
+<div class="card card-discussion mb-4">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start">
+            <h3>{{ discussion.title }}</h3>
+            {% if discussion.is_resolved %}
+                <span class="badge badge-resolved">Resolved</span>
+            {% else %}
+                <span class="badge badge-open">Open</span>
+            {% endif %}
+        </div>
+        <div class="small text-muted mb-3">
+            {% if discussion.category %}<span class="badge badge-category">{{ discussion.category.name }}</span>{% endif %}
+            Posted by <strong>{{ discussion.author.username }}</strong> &middot; {{ discussion.created_at|timesince }} ago &middot;
+            <i class="bi bi-eye"></i> {{ discussion.views }} views
+        </div>
+        <p style="white-space: pre-line;">{{ discussion.body }}</p>
+
+        <div class="d-flex gap-2 mt-3">
+            {% if user.is_authenticated %}
+            <form method="post" action="{% url 'toggle_like' discussion.pk %}">
+                {% csrf_token %}
+                <button class="btn btn-sm btn-outline-danger">
+                    <i class="bi bi-heart{% if user in discussion.likes.all %}-fill{% endif %}"></i> {{ discussion.like_count }} Like{{ discussion.like_count|pluralize }}
+                </button>
+            </form>
+            {% endif %}
+            {% if discussion.author == user %}
+            <a href="{% url 'edit_discussion' discussion.pk %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i> Edit</a>
+            <a href="{% url 'delete_discussion' discussion.pk %}" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i> Delete</a>
+            <form method="post" action="{% url 'toggle_resolved' discussion.pk %}">
+                {% csrf_token %}
+                <button class="btn btn-sm btn-outline-success">
+                    {% if discussion.is_resolved %}Mark as Open{% else %}Mark as Resolved{% endif %}
+                </button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<h5><i class="bi bi-chat-dots"></i> {{ comments.count }} Repl{{ comments.count|pluralize:"y,ies" }}</h5>
+
+{% for comment in comments %}
+<div class="card mb-2 {% if comment.is_solution %}comment-solution{% endif %}">
+    <div class="card-body py-2">
+        <div class="d-flex justify-content-between">
+            <strong>{{ comment.author.username }}</strong>
+            <span class="small text-muted">{{ comment.created_at|timesince }} ago</span>
+        </div>
+        {% if comment.is_solution %}<span class="badge badge-resolved mb-1"><i class="bi bi-check-circle"></i> Solution</span>{% endif %}
+        <p class="mb-1" style="white-space: pre-line;">{{ comment.body }}</p>
+        <div class="d-flex gap-2">
+            {% if discussion.author == user and not comment.is_solution %}
+            <form method="post" action="{% url 'mark_solution' comment.pk %}">
+                {% csrf_token %}
+                <button class="btn btn-sm btn-link p-0">Mark as solution</button>
+            </form>
+            {% endif %}
+            {% if comment.author == user or discussion.author == user %}
+            <form method="post" action="{% url 'delete_comment' comment.pk %}">
+                {% csrf_token %}
+                <button class="btn btn-sm btn-link text-danger p-0">Delete</button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% empty %}
+<p class="text-muted">No replies yet. Be the first to help!</p>
+{% endfor %}
+
+{% if user.is_authenticated %}
+<div class="card mt-4">
+    <div class="card-body">
+        <h6>Post a Reply</h6>
+        <form method="post">
+            {% csrf_token %}
+            {{ form.body }}
+            <button type="submit" class="btn btn-primary mt-2"><i class="bi bi-send"></i> Post Reply</button>
+        </form>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-warning mt-3"><a href="{% url 'login' %}">Log in</a> to join the discussion.</div>
+{% endif %}
+{% endblock %}
